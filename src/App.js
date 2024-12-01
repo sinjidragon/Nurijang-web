@@ -1,210 +1,108 @@
-import React, { useState, useEffect, useRef } from 'react';
+// src/App.js
+import React, { useEffect, useCallback } from 'react';
 import { GoogleMap, LoadScript, MarkerF } from '@react-google-maps/api';
 import LoadingSpinner from './components/LoadingSpinner';
 import FacilityCard from './components/FacilityCard';
 import ErrorMessage from './components/ErrorMessage';
+import SearchPanel from './components/SearchPanel';
+import { useMapState } from './hooks/useMapState';
+import { useSearch } from './hooks/useSearch';
+import { fetchSuggestions, searchFacilities } from './services/api';
+import { GOOGLE_MAPS_API_KEY, MAP_STYLES, MAP_ICONS } from './constants/config';
+import ChatComponent from './components/ChatComponent';
+
 import './App.css';
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBR3XR176Wj4TBWWcH2qY_tungtmqpofVw';
-
 const App = () => {
-  const [center, setCenter] = useState({
-    lat: 37.5665,
-    lng: 126.9780
-  });
-  const [facilities, setFacilities] = useState([]);
-  const [userLocation, setUserLocation] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedFacility, setSelectedFacility] = useState(null);
-  const [searchText, setSearchText] = useState('');
-  const [suggestions, setSuggestions] = useState(null);
-  const [showSearchPanel, setShowSearchPanel] = useState(false);
-  const searchPanelRef = useRef(null);
-  const mapRef = useRef(null);
+  const { 
+    center, setCenter, facilities, setFacilities, 
+    userLocation, setUserLocation, loading, setLoading, 
+    error, setError, selectedFacility, setSelectedFacility, 
+    mapRef, getCurrentLocation, searchCurrentLocation 
+  } = useMapState();
 
-  const mapStyles = {
-    height: "100vh",
-    width: "100%"
-  };
+  const { 
+    searchText, setSearchText, suggestions, setSuggestions, 
+    showSearchPanel, setShowSearchPanel, searchPanelRef,
+    resetSearchPanel 
+  } = useSearch();
 
-  const userLocationIcon = {
-    url: "data:image/svg+xml;base64," + btoa(`
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="8" fill="#4285F4" stroke="white" stroke-width="2"/>
-      </svg>
-    `),
-    scaledSize: { width: 24, height: 24 },
-    anchor: { x: 12, y: 12 }
-  };
-
-  const facilityIcon = {
-    url: "data:image/svg+xml;base64," + btoa(`
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 2C10.48 2 6 6.48 6 12C6 19.25 16 30 16 30C16 30 26 19.25 26 12C26 6.48 21.52 2 16 2ZM16 15C14.34 15 13 13.66 13 12C13 10.34 14.34 9 16 9C17.66 9 19 10.34 19 12C19 13.66 17.66 15 16 15Z" fill="#4285F4"/>
-      </svg>
-    `),
-    scaledSize: { width: 32, height: 32 },
-    anchor: { x: 16, y: 32 }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchPanelRef.current && !searchPanelRef.current.contains(event.target)) {
-        setShowSearchPanel(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const getCurrentLocation = async () => {
+  const handleSearch = useCallback(async (searchType = 'search', facility = null) => {
     setLoading(true);
     setError(null);
-    try {
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject);
-      });
-      
-      const location = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude
-      };
-      setUserLocation(location);
-      setCenter(location);
-      await fetchNearbyFacilities(location);
-    } catch (error) {
-      setError("위치 정보를 가져올 수 없습니다. 위치 서비스가 활성화되어 있는지 확인해주세요.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // New function to search facilities in current map view
-  const searchCurrentLocation = async () => {
-    if (!mapRef.current) return;
     
-    setLoading(true);
-    setError(null);
     try {
-      const map = mapRef.current.state.map;
-      const center = map.getCenter();
-      const location = {
-        lat: center.lat(),
-        lng: center.lng()
+      const currentLocation = {
+        lat: userLocation?.lat || center.lat || 37.5665,
+        lng: userLocation?.lng || center.lng || 126.9780
       };
-      
-      await fetchNearbyFacilities(location);
-    } catch (error) {
-      setError("현재 지도 위치에서 시설을 검색하는데 실패했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const fetchSuggestions = async () => {
-    if (!searchText.trim()) {
-      setSuggestions(null);
-      return;
-    }
-
-    try {
-      const response = await fetch('/suggestions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          fcltyCrdntLo: userLocation?.lng || center.lng,
-          fcltyCrdntLa: userLocation?.lat || center.lat,
-          searchText: searchText
-        })
+      const data = await searchFacilities({
+        searchType,
+        searchText,
+        location: currentLocation
       });
 
-      if (!response.ok) throw new Error('Failed to fetch suggestions');
-      const data = await response.json();
-      setSuggestions(data);
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-    }
-  };
-
-  const handleSearch = async (searchType = 'search', facility = null) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const url = searchType === 'item' ? '/search-item' : '/search';
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          fcltyCrdntLo: userLocation?.lng || center.lng,
-          fcltyCrdntLa: userLocation?.lat || center.lat,
-          searchText: searchText
-        })
-      });
-
-      if (!response.ok) throw new Error('검색에 실패했습니다.');
-      const data = await response.json();
       setFacilities(data);
-      setShowSearchPanel(false);
+      resetSearchPanel();
 
-      // If facility is provided, center map on that facility
-      if (facility) {
-        const newCenter = {
-          lat: facility.fcltyCrdntLa,
-          lng: facility.fcltyCrdntLo
-        };
-        setCenter(newCenter);
-      }
-      // Otherwise center on first result if exists
-      else if (data.length > 0) {
+      if (facility && facility.fcltyCrdntLa !== 0 && facility.fcltyCrdntLo !== 0) {
         setCenter({
-          lat: data[0].fcltyCrdntLa,
-          lng: data[0].fcltyCrdntLo
+          lat: Number(facility.fcltyCrdntLa),
+          lng: Number(facility.fcltyCrdntLo)
+        });
+      } else if (data.length > 0 && data[0].fcltyCrdntLa !== 0 && data[0].fcltyCrdntLo !== 0) {
+        setCenter({
+          lat: Number(data[0].fcltyCrdntLa),
+          lng: Number(data[0].fcltyCrdntLo)
         });
       }
     } catch (error) {
+      console.error('Search error:', error);
       setError(error.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [center, searchText, userLocation, setFacilities, setCenter, setError, setLoading, resetSearchPanel]);
 
-  const fetchNearbyFacilities = async (location) => {
-    try {
-      const response = await fetch('/facilities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          fcltyCrdntLo: location.lng,
-          fcltyCrdntLa: location.lat
-        })
-      });
+  const handleSelectFacility = useCallback((facility) => {
+    if (!facility) return;
 
-      if (!response.ok) throw new Error('시설 정보를 가져오는데 실패했습니다.');
-      const data = await response.json();
-      setFacilities(data);
-    } catch (error) {
-      setError(error.message);
-      setFacilities([]);
+    if (facility.fcltyCrdntLa === 0 || facility.fcltyCrdntLo === 0) {
+      console.warn('Facility has invalid coordinates (0,0):', facility.fcltyNm);
+      return;
     }
-  };
+    
+    setSearchText(facility.fcltyNm || '');
+    const coordinates = {
+      lat: Number(facility.fcltyCrdntLa),
+      lng: Number(facility.fcltyCrdntLo)
+    };
+    
+    setCenter(coordinates);
+    setSelectedFacility(facility);
+    resetSearchPanel();
+      
+    if (mapRef.current?.state?.map) {
+      const map = mapRef.current.state.map;
+      map.panTo(coordinates);
+      map.setZoom(15);
+    }
+  }, [setSearchText, setCenter, setSelectedFacility, resetSearchPanel, mapRef]);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      if (showSearchPanel) {
-        fetchSuggestions();
+      if (showSearchPanel && searchText.trim()) {
+        fetchSuggestions(searchText, center)
+          .then(setSuggestions)
+          .catch(console.error);
+      } else {
+        setSuggestions(null);
       }
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchText, showSearchPanel]);
+  }, [searchText, showSearchPanel, center]);
 
   return (
     <div className="app-container">
@@ -221,61 +119,16 @@ const App = () => {
         </div>
 
         {showSearchPanel && (
-          <div className="search-panel">
-            {suggestions?.mainItems && suggestions.mainItems.length > 0 && (
-              <div className="search-section">
-                <h3 className="text-sm font-semibold mb-2">종목</h3>
-                {suggestions.mainItems.map((item, index) => (
-                  <div
-                    key={index}
-                    className="search-item flex items-center p-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => {
-                      setSearchText(item);
-                      handleSearch('item');
-                      setShowSearchPanel(false);
-                    }}
-                  >
-                    <span className="material-icons mr-2">sports</span>
-                    {item}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {suggestions?.facilities && suggestions.facilities.length > 0 && (
-              <div className="search-section">
-                <h3 className="text-sm font-semibold mb-2">시설명</h3>
-                {suggestions.facilities.map((facility) => (
-                  <div
-                    key={facility.id}
-                    className="search-item flex items-center p-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => {
-                      const selectedLocation = {
-                        lat: facility.fcltyCrdntLa,
-                        lng: facility.fcltyCrdntLo
-                      };
-                      setSearchText(facility.fcltyNm);
-                      setCenter(selectedLocation);
-                      setSelectedFacility(facility);
-                      setShowSearchPanel(false);
-                      
-                      // 지도를 해당 위치로 부드럽게 이동
-                      if (mapRef.current) {
-                        const map = mapRef.current.state.map;
-                        map.panTo(selectedLocation);
-                      }
-                    }}
-                  >
-                    <span className="material-icons mr-2">location_on</span>
-                    <div>
-                      <div>{facility.fcltyNm}</div>
-                      <div className="text-sm text-gray-500">{Math.round(facility.distance)}m</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <SearchPanel
+            suggestions={suggestions}
+            onSelectFacility={handleSelectFacility}
+            onSelectItem={(item) => {
+              setSearchText(item);
+              handleSearch('item');
+            }}
+            searchText={searchText}
+            setSearchText={setSearchText}
+          />
         )}
       </div>
 
@@ -301,12 +154,12 @@ const App = () => {
 
       <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY}>
         <GoogleMap
-          mapContainerStyle={mapStyles}
+          mapContainerStyle={MAP_STYLES}
           zoom={15}
           center={center}
           onClick={() => {
             setSelectedFacility(null);
-            setShowSearchPanel(false);
+            resetSearchPanel();
           }}
           options={{
             zoomControl: true,
@@ -316,19 +169,28 @@ const App = () => {
           }}
           ref={mapRef}
         >
-          {userLocation && <MarkerF position={userLocation} icon={userLocationIcon} />}
-          
-          {facilities.map((facility) => (
-            <MarkerF
-              key={facility.id}
-              position={{
-                lat: facility.fcltyCrdntLa,
-                lng: facility.fcltyCrdntLo
-              }}
-              icon={facilityIcon}
-              onClick={() => setSelectedFacility(facility)}
+          {userLocation && (
+            <MarkerF 
+              position={userLocation} 
+              icon={MAP_ICONS.user} 
             />
-          ))}
+          )}
+          
+          {facilities.map((facility) => {
+            if (facility.fcltyCrdntLa === 0 || facility.fcltyCrdntLo === 0) return null;
+
+            return (
+              <MarkerF
+                key={facility.id}
+                position={{
+                  lat: Number(facility.fcltyCrdntLa),
+                  lng: Number(facility.fcltyCrdntLo)
+                }}
+                icon={MAP_ICONS.facility}
+                onClick={() => setSelectedFacility(facility)}
+              />
+            );
+          })}
         </GoogleMap>
       </LoadScript>
 
