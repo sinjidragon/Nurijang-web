@@ -1,0 +1,47 @@
+/* components/FacilityCard.css */
+.facility-card {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+  
+  .facility-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    color: #333;
+  }
+  
+  .address {
+    color: #666;
+    margin: 0.5rem 0;
+  }
+  
+  .phone a {
+    color: #4285F4;
+    text-decoration: none;
+  }
+  
+  .distance {
+    margin-top: 1rem;
+    color: #4285F4;
+    font-weight: 500;
+  }

@@ -1,0 +1,24 @@
+/* components/ErrorMessage.css */
+.error-message {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff4444;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .error-message button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+  }
