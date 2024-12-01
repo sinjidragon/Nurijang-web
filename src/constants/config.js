@@ -1,4 +1,4 @@
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyBR3XR176Wj4TBWWcH2qY_tungtmqpofVw';
+export const GOOGLE_MAPS_API_KEY = '${GOOGLE_MAPS_API_KEY}';
 
 export const MAP_STYLES = {
   height: "100vh",
