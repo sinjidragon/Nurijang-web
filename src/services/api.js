@@ -12,7 +12,7 @@ const validateFacility = (facility) => {
   
   export const fetchNearbyFacilities = async (location) => {
     try {
-      const response = await fetch('${BASE_URL}/facilities', {
+      const response = await fetch('/facilities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -35,7 +35,7 @@ const validateFacility = (facility) => {
   export const searchFacilities = async (params) => {
     try {
       const { searchType, searchText, location } = params;
-      const url = searchType === 'item' ? '${BASE_URL}/search-item' : '/search';
+      const url = searchType === 'item' ? '/search-item' : '/search';
       
       const response = await fetch(url, {
         method: 'POST',
@@ -62,7 +62,7 @@ const validateFacility = (facility) => {
     try {
       if (!searchText?.trim()) return null;
       
-      const response = await fetch('${BASE_URL}/suggestions', {
+      const response = await fetch('/suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
