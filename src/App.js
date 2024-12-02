@@ -14,6 +14,7 @@ import ChatComponent from './components/ChatComponent';
 import './App.css';
 
 const App = () => {
+  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const { 
     center, setCenter, facilities, setFacilities, 
     userLocation, setUserLocation, loading, setLoading, 
@@ -152,7 +153,7 @@ const App = () => {
         </button>
       </div>
 
-      <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY}>
+      <LoadScript googleMapsApiKey={apiKey}>
         <GoogleMap
           mapContainerStyle={MAP_STYLES}
           zoom={15}
