@@ -1,4 +1,5 @@
 // 시설 데이터 검증 함수
+const base_url = process.env.REACT_APP_BASE_URL;
 const validateFacility = (facility) => {
     return {
       ...facility,
@@ -12,7 +13,7 @@ const validateFacility = (facility) => {
   
   export const fetchNearbyFacilities = async (location) => {
     try {
-      const response = await fetch('/facilities', {
+      const response = await fetch(`${base_url}/facilities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -35,7 +36,7 @@ const validateFacility = (facility) => {
   export const searchFacilities = async (params) => {
     try {
       const { searchType, searchText, location } = params;
-      const url = searchType === 'item' ? '/search-item' : '/search';
+      const url = searchType === 'item' ? `${base_url}/search-item` : '/search';
       
       const response = await fetch(url, {
         method: 'POST',
@@ -62,7 +63,7 @@ const validateFacility = (facility) => {
     try {
       if (!searchText?.trim()) return null;
       
-      const response = await fetch('/suggestions', {
+      const response = await fetch(`${base_url}/suggestions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
