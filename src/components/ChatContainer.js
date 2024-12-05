@@ -1,4 +1,3 @@
-// ChatContainer.js
 import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
@@ -11,9 +10,9 @@ const INITIAL_MESSAGE = {
 };
 
 const INITIAL_RECOMMENDATIONS = [
-  '운동 후 근육통을 줄이는 법을 알려주세요',
-  '가까운 운동시설을 추천해주세요',
-  '운동할 때 주의할 점은 무엇인가요?'
+  '운동 후 근육통을 줄이는 방법을 알려줘.',
+  '가까운 공원에서 할 수 있는 운동을 추천해줘.',
+  '가벼운 운동부터 시작하려면 뭘 하면 좋을까?'
 ];
 
 const ChatContainer = () => {
@@ -21,6 +20,7 @@ const ChatContainer = () => {
   const [loading, setLoading] = useState(false);
   const [threadId, setThreadId] = useState(null);
   const [recommendations, setRecommendations] = useState(INITIAL_RECOMMENDATIONS);
+  const [hasUserSentMessage, setHasUserSentMessage] = useState(false);
   const messagesEndRef = useRef(null);
   
   const API_BASE_URL = 'http://3.35.98.48:8080';
@@ -81,6 +81,8 @@ const ChatContainer = () => {
 
     try {
       setLoading(true);
+      setHasUserSentMessage(true); // 사용자가 첫 메시지를 보냈음을 표시
+
       setMessages(prev => [...prev, {
         id: Date.now(),
         type: 'user',
@@ -116,9 +118,13 @@ const ChatContainer = () => {
           }]);
         }
 
-        // 추천 질문 업데이트
-        if (responseData.recommend && responseData.recommend.length > 0) {
-          setRecommendations(responseData.recommend);
+        // 사용자가 메시지를 보낸 후에만 서버의 추천 질문을 사용
+        if (hasUserSentMessage) {
+          if (responseData.recommand && responseData.recommand.length > 0) {
+            setRecommendations(responseData.recommand);
+          } else {
+            setRecommendations([]); // 추천 질문이 없으면 빈 배열로 설정
+          }
         }
       } else {
         // 응답을 파싱할 수 없는 경우
@@ -127,6 +133,9 @@ const ChatContainer = () => {
           type: 'assistant',
           content: responseText
         }]);
+        if (hasUserSentMessage) {
+          setRecommendations([]); // 파싱 실패 시 추천 질문 초기화
+        }
       }
 
     } catch (error) {
@@ -136,6 +145,9 @@ const ChatContainer = () => {
         type: 'assistant',
         content: '죄송합니다. 메시지 전송 중 오류가 발생했습니다.'
       }]);
+      if (hasUserSentMessage) {
+        setRecommendations([]); // 에러 발생 시 추천 질문 초기화
+      }
     } finally {
       setLoading(false);
     }
