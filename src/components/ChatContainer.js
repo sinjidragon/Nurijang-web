@@ -67,11 +67,9 @@ const ChatContainer = () => {
 
   const parseResponse = (responseText) => {
     try {
-      const jsonMatch = responseText.match(/```json([\s\S]*?)```/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[1]);
-      }
-      return JSON.parse(responseText);
+      // JSON 형식에서 코드 블록 제거
+      const cleanText = responseText.replace(/```json\n|\n```/g, '');
+      return JSON.parse(cleanText);
     } catch (error) {
       console.error('Failed to parse response:', error);
       return null;
@@ -83,7 +81,6 @@ const ChatContainer = () => {
 
     try {
       setLoading(true);
-      // 사용자 메시지 추가
       setMessages(prev => [...prev, {
         id: Date.now(),
         type: 'user',
@@ -119,7 +116,7 @@ const ChatContainer = () => {
           }]);
         }
 
-        // 추천 질문 업데이트 (새로운 추천 질문이 있는 경우만)
+        // 추천 질문 업데이트
         if (responseData.recommend && responseData.recommend.length > 0) {
           setRecommendations(responseData.recommend);
         }
@@ -128,7 +125,7 @@ const ChatContainer = () => {
         setMessages(prev => [...prev, {
           id: Date.now() + 1,
           type: 'assistant',
-          content: '죄송합니다. 메시지 전송 중 오류가 발생했습니다.'
+          content: responseText
         }]);
       }
 
@@ -154,7 +151,7 @@ const ChatContainer = () => {
             content={message.content}
           />
         ))}
-        {!loading && recommendations && recommendations.length > 0 && (
+        {!loading && recommendations.length > 0 && (
           <div className="suggested-questions">
             {recommendations.map((question, index) => (
               <button
