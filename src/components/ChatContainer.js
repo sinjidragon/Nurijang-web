@@ -23,7 +23,7 @@ const ChatContainer = () => {
   const [hasUserSentMessage, setHasUserSentMessage] = useState(false);
   const messagesEndRef = useRef(null);
   
-  const API_BASE_URL = 'http://3.35.98.48:8080';
+  const API_BASE_URL = process.env.REACT_APP_BASE_URL;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -55,7 +55,7 @@ const ChatContainer = () => {
     };
 
     startChat();
-  }, []);
+  }, [API_BASE_URL]);
 
   useEffect(() => {
     scrollToBottom();
@@ -81,7 +81,7 @@ const ChatContainer = () => {
 
     try {
       setLoading(true);
-      setHasUserSentMessage(true); // 사용자가 첫 메시지를 보냈음을 표시
+      setHasUserSentMessage(true);
 
       setMessages(prev => [...prev, {
         id: Date.now(),
@@ -109,7 +109,6 @@ const ChatContainer = () => {
       const responseData = parseResponse(responseText);
 
       if (responseData) {
-        // 응답 메시지 추가
         if (responseData.answer && responseData.answer.length > 0) {
           setMessages(prev => [...prev, {
             id: Date.now() + 1,
@@ -118,23 +117,21 @@ const ChatContainer = () => {
           }]);
         }
 
-        // 사용자가 메시지를 보낸 후에만 서버의 추천 질문을 사용
         if (hasUserSentMessage) {
           if (responseData.recommand && responseData.recommand.length > 0) {
             setRecommendations(responseData.recommand);
           } else {
-            setRecommendations([]); // 추천 질문이 없으면 빈 배열로 설정
+            setRecommendations([]);
           }
         }
       } else {
-        // 응답을 파싱할 수 없는 경우
         setMessages(prev => [...prev, {
           id: Date.now() + 1,
           type: 'assistant',
           content: responseText
         }]);
         if (hasUserSentMessage) {
-          setRecommendations([]); // 파싱 실패 시 추천 질문 초기화
+          setRecommendations([]);
         }
       }
 
@@ -146,7 +143,7 @@ const ChatContainer = () => {
         content: '죄송합니다. 메시지 전송 중 오류가 발생했습니다.'
       }]);
       if (hasUserSentMessage) {
-        setRecommendations([]); // 에러 발생 시 추천 질문 초기화
+        setRecommendations([]);
       }
     } finally {
       setLoading(false);
