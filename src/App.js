@@ -9,7 +9,7 @@ import ChatContainer from './components/ChatContainer';
 import { useMapState } from './hooks/useMapState';
 import { useSearch } from './hooks/useSearch';
 import { fetchSuggestions, searchFacilities } from './services/api';
-import { GOOGLE_MAPS_API_KEY, MAP_STYLES, MAP_ICONS } from './constants/config';
+import { MAP_STYLES, MAP_ICONS } from './constants/config';
 import './App.css';
 
 const App = () => {
@@ -19,7 +19,7 @@ const App = () => {
   
   const { 
     center, setCenter, facilities, setFacilities, 
-    userLocation, setUserLocation, loading, setLoading, 
+    userLocation, loading, setLoading, 
     error, setError, selectedFacility, setSelectedFacility, 
     mapRef, getCurrentLocation, searchCurrentLocation 
   } = useMapState();
@@ -105,7 +105,7 @@ const App = () => {
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchText, showSearchPanel, center]);
+  }, [setSuggestions,searchText, showSearchPanel, center]);
 
   useEffect(() => {
     if (mapRef.current?.state?.map) {
