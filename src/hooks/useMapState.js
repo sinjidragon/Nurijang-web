@@ -1,3 +1,4 @@
+// hooks/useMapState.js
 import { useState, useRef, useCallback } from 'react';
 import { fetchNearbyFacilities } from '../services/api';
 
@@ -17,7 +18,7 @@ export const useMapState = () => {
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
-      
+
       const location = {
         lat: position.coords.latitude,
         lng: position.coords.longitude
@@ -35,7 +36,7 @@ export const useMapState = () => {
 
   const searchCurrentLocation = useCallback(async () => {
     if (!mapRef.current?.state?.map) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -45,7 +46,8 @@ export const useMapState = () => {
         lat: center.lat(),
         lng: center.lng()
       };
-      
+      setUserLocation(location);  // 현재 지도 중심을 사용자 위치로 설정
+
       const data = await fetchNearbyFacilities(location);
       setFacilities(data);
     } catch (error) {
@@ -73,5 +75,3 @@ export const useMapState = () => {
     searchCurrentLocation
   };
 };
-
-export default useMapState;

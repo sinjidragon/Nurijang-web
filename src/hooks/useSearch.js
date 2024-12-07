@@ -1,4 +1,4 @@
-// src/hooks/useSearch.js
+// hooks/useSearch.js
 import { useState, useEffect, useRef } from 'react';
 
 export const useSearch = () => {
@@ -18,7 +18,6 @@ export const useSearch = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 검색 패널 표시 여부 초기화 함수
   const resetSearchPanel = () => {
     setShowSearchPanel(false);
   };

@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleMap, LoadScript, MarkerF } from '@react-google-maps/api';
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
@@ -96,7 +97,8 @@ const App = () => {
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       if (showSearchPanel && searchText.trim()) {
-        fetchSuggestions(searchText, center)
+        const searchLocation = userLocation || center;
+        fetchSuggestions(searchText, searchLocation)
           .then(setSuggestions)
           .catch(console.error);
       } else {
@@ -105,7 +107,7 @@ const App = () => {
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [setSuggestions,searchText, showSearchPanel, center]);
+  }, [setSuggestions, searchText, showSearchPanel, userLocation, center]);
 
   useEffect(() => {
     if (mapRef.current?.state?.map) {
@@ -227,6 +229,7 @@ const App = () => {
         <FacilityCard
           facility={selectedFacility}
           onClose={() => setSelectedFacility(null)}
+          userLocation={userLocation}
         />
       )}
 
